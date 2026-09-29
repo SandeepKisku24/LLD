@@ -19,4 +19,9 @@ public class EventRepo {
         return updatedEvent;
     }
 
+    public Event getEvent(String eventId) {
+        // logic to get event by id
+        return EventMap.get(eventId);
+    }
+
 }

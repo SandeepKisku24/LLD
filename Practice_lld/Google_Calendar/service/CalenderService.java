@@ -21,10 +21,22 @@ public class CalenderService {
 
     public String addEvent(String userId, Event event) {
         String eventId = eventRepo.addEvent(event);
-        userRepo.addEventToUser(userId, event);
+        List<String> inviteeIds = event.getInviteeIds();
+        // TODO: Copy inviteeIds into a mutable participant list, add userId onl if absent, and use that list below.
+        inviteeIds.add(userId); // Add the sender to the invitee list
+        for (String inviteeId : inviteeIds) {
+            userRepo.addEventToUser(inviteeId, event);
+        }
         return eventId;
     }
     public Event cancelEvent(String eventId) {
+        if (eventRepo.getEvent(eventId) == null) {
+            return null;
+        }
+        List<String> inviteeIds = eventRepo.getEvent(eventId).getInviteeIds();
+        for (String inviteeId : inviteeIds) {
+            userRepo.removeEventFromUser(inviteeId, eventId);
+        }
         return eventRepo.cancelEvent(eventId);
     }
 
@@ -33,8 +45,7 @@ public class CalenderService {
     // check if the current time is before the event's start time,if yes create the event
     public String bookEvent(String userId, Event event) {
         if (bookingStrategy.canBook(event, userRepo)) {
-            eventRepo.addEvent(event);
-            userRepo.addEventToUser(userId, event);
+            addEvent(userId, event);
             return bookingStrategy.bookEvent(event, userRepo);
         } else {
             return "One or more invitees are not available for the event time slot. Event booking failed.";
